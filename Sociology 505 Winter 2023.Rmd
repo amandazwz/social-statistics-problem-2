@@ -1,0 +1,488 @@
+---
+title: "2nd Assignment"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r message=FALSE}
+#loading libraries into R
+library(pander)
+library(modelsummary)
+library(tidyverse)
+library(ggplot2)
+```
+
+## Problem 1
+
+Use of evidence-based decision making in social service organizations is
+not well understood. There are a number of organizational factors that
+may play a role. The data set "org_research2021.csv" provides a sample
+of 199 non-government medium to large service agencies and the amount of
+work hours invested in program evaluation (ehours---avg hours in a
+month) by each agency. Your task is to relate organizational structural
+factors, policy incentives, and organizational cultural factors to level
+of evaluation oriented research as measured by ehours. Structural
+factors capture organizational form and resource availability (admin=avg
+number of positions defined as top administrative staff; research=avg
+number of research positions; and budget=dollars in 1000's for the
+organization's budget). Policy incentives is measured by the allocation
+of grant dollars available in the agency's jurisdiction (grants=dollars
+in 1000's). Culture of the organization (in support of use of research
+evidence) is captured by a continuous climate index filled out by a
+sample of staff at each organization (climate: index of 10 items summed
+on 6 pt Likert scale---range from 0 to 60---think of it "supportive
+climate units") and lastly a measure of professionalism captured by the
+% of key staff with MA or greater education credential throughout the
+organization (hidegree---measured as percentage points). (Note: average
+administrative and average research staff is taken from prior 5 years of
+the agency records).
+
+```{r}
+#loading data into R
+Data1=read.csv("org_research2021.csv")
+```
+
+Estimate a set of models: A) run a regression model (using ML
+estimation) predicting the amount of evaluation effort (ehours) by the 3
+organization structural factors defined above (admin, research and
+budget). Interpret this model's point estimates for three independent
+variable. Call this model "Model A".
+
+```{r}
+Model_A <- lm(ehours ~ admin + research + budget , data = Data1)
+summary(Model_A) %>% pander()
+
+```
+
+The coefficients section shows the estimated coefficients for each independent variable. The intercept term represents the average number of hours invested in program evaluation when all the independent variables are equal to zero. In this case, the intercept is estimated to be 23.95601.
+
+The coefficients for the admin, research, and budget variables indicate that, on average, for each unit increase in the number of administrative positions (admin), the average number of hours invested in program evaluation increases by 3.54956 hours. For each unit increase in the number of research positions (research), the average number of hours invested in program evaluation increases by 8.62697 hours. And for each unit increase in the organization's budget (budget), the average number of hours invested in program evaluation increases by 0.16475 hours.
+
+The p-value for the hypothesis test that the corresponding coefficient is equal to zero indicating that they are statistically significant at the p < 0.05 level. The asterisks next to the p-values indicate the level of significance. Three asterisks indicate a p-value less than 0.001, indicating strong evidence against the null hypothesis that the corresponding coefficient is equal to zero.
+
+Overall, this analysis suggests that the number of administrative positions, research positions, and budget of the organization are positively associated with the average number of hours invested in program evaluation and are statistically significant predictors of the dependent variable.
+
+
+B)  Put a 90% confidence interval or compatibility interval about the
+    ADMIN coefficient and provide a brief interpretation.
+
+```{r}
+confint(Model_A,level = 0.9) %>% pander()
+```
+
+The 90% confidence interval for the admin variable is between 2.25 and 4.85. This means that if we were to repeat the analysis many times, we would expect the coefficient for the admin variable to fall between 2.25 and 4.85 in 95% of the cases.
+
+C)  run a new model (call it Model B) that adds the two cultural factors
+    (climate and hidegree) to the prior model (call the prior model is
+    Model A above). Interpret this new model and evaluate if adding the
+    cultural and professionalism features of the organization improves
+    the fit of the new model above the fit of Model A.
+
+```{r}
+Model_B <- lm(ehours ~ admin + research + budget + hidegree + climate , 
+              data = Data1)
+
+modelsummary(list(A=Model_A,B=Model_B),
+             statistic = "{p.value} : {std.error}",
+             output = "markdown")
+```
+
+The results of Model B show that, among the five independent variables, "climate" has the strongest relationship with "ehours", with a coefficient of 1.00002, which suggests that an increase of 1 unit in the "climate" score is associated with an increase of 1 unit in the "ehours". The coefficient for "research" is 4.32063, which indicates that an increase of 1 unit in the number of research positions is associated with an increase of 4.32 units in the "ehours". The coefficient for "budget" is 0.14690, which means that an increase of $1,000 in the organization's budget is associated with an increase of 0.15 units in the "ehours". The coefficient for "admin" is 1.84521, which suggests that an increase of 1 unit in the number of administrative staff positions is associated with an increase of 1.85 units in the "ehours". The coefficient for "hidegree" is 0.50923, which indicates that an increase of 1 percentage point in the proportion of key staff with a master's degree or higher is associated with an increase of 0.51 units in the "ehours".
+
+In terms of significance, the p-values for "research", "budget", and "climate" are below 0.05, which suggests that these variables are statistically significant predictors of "ehours". The p-value for "admin" is close to 0.05, which indicates that this variable is a borderline significant predictor of "ehours". The p-value for "hidegree" is greater than 0.05, which suggests that this variable is not a significant predictor of "ehours".
+
+By adding climate the model improves the $R^2$ increases to 0.5 from 0.358.
+
+D)  in the new Model B what are the marginal effects of hidegree? Of
+    budget? What is the standardized effect of hidegree in the model? Of
+    Budget? (Be sure to interpret the effects of both hidegree and
+    budget in both their unstandardized and standardized form). Is there
+    any real value to the standardized coefficients in this particular
+    comparison?
+
+```{r}
+Model_B_std <- lm(ehours ~ admin + research + budget + scale(hidegree) + scale(climate) ,
+                  data = Data1)
+modelsummary(list(A=Model_A,B=Model_B,Bstd=Model_B_std),
+             statistic =  "{p.value} : {std.error}",
+             output = "markdown")
+```
+
+In this model, "admin", "research", "budget", and "climate" have p-values smaller than 0.05, which means they are significant in predicting the "ehours" variable. "hidegree" has a p-value greater than 0.05, so it is not significant.
+
+In this particular model, the "hidegree" and "climate" variable has been scaled, meaning that it has been transformed to be on the same scale as the other variables. The only value that change are the coefficients of two variable the rest of the model values are similar to the unstandardized.This can help with interpretation and with the stability of the regression coefficients.
+
+E)  you explained this research task you just executed to one of your
+    colleagues and they wondered if the effect of the research component
+    of the organization (size of research staff---research) differed
+    from the effect for size of the administrative staff (admin).
+    Discuss this and provide a statistical test or examination of
+    whether this is true or not (use Model B as the model you are
+    working from).
+
+```{r}
+par(mfrow=c(1,2))
+shapiro.test(Data1$admin)
+shapiro.test(Data1$research)
+boxplot(Data1$admin,main="Administration")
+boxplot(Data1$research,main="Research")
+wilcox.test(Data1$research,Data1$admin,alternative = "two.sided") %>% pander()
+```
+
+Due to the existing outliers and the fact that the variables are not normally distributed a more accurate test to run was wilcox test.It is a non-parametric statistical test that is used to compare two samples to see if they come from the same population. In this case, the test is being used to compare the research and admin variables in the Data1 data set.
+
+The test results indicate that there is a significant difference between the research and admin variables (W = 126, p-value < 2.2e-16). The alternative hypothesis is that the true location shift is not equal to 0, meaning that the means of the two variables are different. The low p-value supports this hypothesis, meaning that we can reject the null hypothesis that the two variables come from the same population.
+
+F)  another colleague really disagrees with climate as a factor in
+    organizational behavior and suggests substituting the incentive
+    measure (grants) for climate in Model B. They argue that incentives
+    change behavior and are less interested in cultural factors.
+    Interpret the results of this model and compare this new model (call
+    it model C) with the previous two models (A and B).
+
+```{r}
+Model_C <- lm(ehours ~ admin + research + budget + hidegree + grants , data = Data1)
+
+modelsummary(list(A=Model_A,B=Model_B,C=Model_C),
+             statistic = "{p.value} : {std.error}",
+             output = "markdown")
+```
+
+The model fits well as the multiple R-squared value of 0.546 and adjusted R-squared value of 0.5325 are close to 1, indicating that the model explains more than half of the variance in the dependent variable. The F-statistic value of 40.64 and a p-value of <2.2e-16 suggest that the model as a whole is significant, meaning that at least one of the independent variables is contributing to the explanation of the dependent variable.
+
+The coefficients table gives the estimates of the parameters in the linear regression equation. The intercept term is 9.6214 and all the other variables have a significant p-value (less than 0.05) except hidegree which suggests that hidegree may not be a significant predictor of ehours. The most significant predictor is grants with an estimate of 1.2727 and a p-value of 3.47e-12. This indicates that for a unit increase in grants, the ehours is expected to increase by 1.2727 on average, holding all other variables constant.
+
+Out of the three models `Model C` has the highest $R^2$ of 0.546 and lowest AIC and BIC which is 1462.0 and 1484.1 respectively.
+
+## Problem 2
+
+A)  Explore the relation between caloric intake (CALORIES100s ---
+    calories in 100's so 10=1000 calories) and life expectancy for
+    females in years (LEF) (i.e. how well does caloric intake predict
+    general health of the population as gauged by LEF). A good human
+    ecologist has suggested that both "food" and "being smart" matter in
+    the health of a population (e.g. CALORIES100s and LITERACY--- the
+    variable FLIT=% female literacy). Run a second model where food
+    (CALORIES100s) and literacy levels are used (e.g. the percentage
+    females who are literate in the population) to predict the life
+    expectancy of females (LEF). (Call the linear additive model with
+    CALORIES100s and LEF Model 1).
+
+```{r}
+#1.	Load the dataset using the following code:
+Data2 = read.csv("EATLIFEprovinces2022.csv")
+
+#2.	Fit the linear additive model (Model 1) using the lm function:
+model1 = lm(lef ~ calories100s, data = Data2)
+
+#3. Fit the linear additive model (Model 1.1) using the lm function:
+model1.1 = lm(lef ~ calories100s + flit, data = Data2)
+
+modelsummary(list(Model1=model1,Model1.1=model1.1),
+             statistic = "{p.value} : {std.error}",
+             output = "markdown")
+
+
+```
+In the first model, the life expectancy of females (LEF) is modeled as a linear function of the caloric intake in 100s (CALORIES100s). The model has an adjusted R-squared value of 0.4926, which indicates that about 49.26% of the variability in LEF can be explained by the linear relationship with CALORIES100s. The coefficient for CALORIES100s is 1.5358, which means that for every 100 calorie increase in the caloric intake, the life expectancy of females increases by 1.5358 years, on average.
+
+In the second model, the life expectancy of females is modeled as a linear function of both caloric intake (CALORIES100s) and the percentage of females who are literate (FLIT). The model has an adjusted R-squared value of 0.7246, which indicates that about 72.46% of the variability in LEF can be explained by the linear relationship with both CALORIES100s and FLIT. The coefficients for CALORIES100s and FLIT are 0.84214 and 0.23733, respectively, which means that for every 100 calorie increase in the caloric intake, the life expectancy of females increases by 0.84214 years, on average, and for every 1% increase in the percentage of literate females, the life expectancy of females increases by 0.23733 years, on average.
+
+By controlling female literacy the model improves significantly as indicated by the $R^2$
+
+B)  Someone suggested that you can only take in so many calories and
+    that the positive impact of caloric intake is not as strong at
+    higher levels of intake and that the strictly linear relation of
+    caloric intake with life expectancy is probably not a good depiction
+    of the relation; it is likely to increase but at a declining rate.
+    Explore this proposition graphically (be sure to control for female
+    literacy when examining this relation in your graphs) and then test
+    if this nonlinear relation is present (i.e. that the nonlinear model
+    is better than the linear). Explain the marginal effect in this
+    nonlinear model of calories on life expectancy (e.g discuss the
+    partial derivative for the effect of calories) and of literacy on
+    life expectancy. Interpret the results of this model. (Call this
+    nonlinear model Model 2).
+
+```{r}
+# Plot the data, controlling for female literacy
+g1=ggplot(Data2, aes(x = calories100s, y = lef, color = flit)) + 
+  geom_point() + 
+  scale_color_gradient(low = "blue", high = "red") + 
+  ggtitle("Life Expectancy vs. Caloric Intake\nControlling for Female Literacy") + 
+  xlab("Caloric Intake") + 
+  ylab("Life Expectancy")
+g1
+
+#This code creates a scatterplot with caloric intake on the x-axis and life expectancy on the y-axis, controlling for female literacy using color.
+
+
+# Fit the nonlinear model (Model 2) using the
+model2 = lm(lef ~ poly(calories100s,degree = 3),data = Data2)
+model2 %>% summary() %>% pander()
+
+g1+geom_smooth(method = "lm",formula = y~poly(x,degree = 3))
+
+```
+
+The life expectancy of females is modeled as a cubic function of the caloric intake (CALORIES100s). The model has an adjusted R-squared value of 0.551, which indicates that about 55.1% of the variability in LEF can be explained by the cubic relationship with CALORIES100s. The coefficients for the cubic terms of CALORIES100s are 105.22259, -37.55716, and -0.07406, respectively, which indicate that a unit increase in 
+
+C)  Evaluate the effect of calories on life expectancy (in the nonlinear
+    model from B above) when the calorie variable is at its mean and
+    when it is 1 standard deviation above and below its mean.
+
+```{r}
+predict(model2,newdata = data.frame(calories100s=c(mean(Data2$calories100s),
+                                                   mean(Data2$calories100s)+
+                                                     sd(Data2$calories100s))))
+```
+
+D)  Create a set of new variables where all variables are deviations
+    from their mean (i.e. centered about their mean---not a z-score but
+    deviations from their mean) and execute the model from B (use the
+    nonlinear regardless of whether it was deemed to improve the model
+    fit). Discuss the changes in the results and explain why you see
+    them (if there are, in fact, changes). (Hint: results from C may
+    help)
+
+```{r}
+model2.1 = lm(lef ~ poly(scale(calories100s),degree = 3),data = Data2)
+model2.1 %>% summary() %>% pander()
+```
+
+The intercept term (67.25967) represents the estimated value of "lef" when "calories100s" is equal to zero. The first polynomial term (105.22259) represents the estimated change in "lef" for a unit increase in "calories100s". The second polynomial term (-37.55716) represents the estimated rate of change in the relationship between "lef" and "calories100s" when "calories100s" changes. The third polynomial term (-0.07406) represents the estimated curvature in the relationship between "lef" and "calories100s".
+
+E)  Test and interpret a model of elasticity between life expectancy and
+    calories (controlling for literacy). (elasticity = log log model)
+    (call this Model 3). This model is evaluating relative or percent
+    change in LEF due to a percent change in calories.
+
+```{r}
+model3=lm(log(lef) ~ log(calories100s) + flit, data = Data2)
+model3 %>% summary() %>% pander()
+```
+
+F)  Test and interpret a similar model of semi-elasticity between life
+    expectancy and calories (controlling for literacy) (semi-elasticity
+    = log level model) (Call this Model 4)
+
+```{r}
+model4=lm(lef ~ log(calories100s) + log(flit), data = Data2)
+model4 %>% summary() %>% pander()
+```
+
+The coefficient for log of calories consumed per day per 100 individuals is 27.9321 with a t-value of 9.491 and a very low p-value of < 2e-16, suggesting a strong positive association between log of calories consumed per day per 100 individuals and life expectancy. This means that a one percent increase in log of calories consumed per day per 100 individuals is associated with a 27.9321 percent increase in life expectancy.
+
+The coefficient for log of literacy rate is 8.2396 with a t-value of 9.037 and a very low p-value of 2.67e-16, suggesting a strong positive association between log of literacy rate and life expectancy. This means that a one percent increase in log of literacy rate is associated with a 8.2396 percent increase in life expectancy.
+
+G)  Look at the fit of all the different models (1,2,3, and 4) you have
+    executed above and choose which model you feel is the best. Defend
+    your choice from both a statistical (i.e. use a gauge of fit) and
+    from a substantive point of view (i.e. from the interpretation of
+    the model).
+
+```{r}
+modelsummary(list(model1,model2,model3,model4),
+             statistic = "{p.value} : {std.error}",
+             output = "markdown")
+```
+
+Comparing the values of these measures across the four models, we find that Model 3 has the highest R-squared (0.699) and adjusted R-squared (0.675). This suggests that Model 3 provides the best statistical fit to the data compared to the other models.
+
+## Problem 3
+
+You have been asked to help analyze a new data set that has been compiled across a random sample of municipal courts (N=444)(courtpenalties2023.csv). The outcome of interest is the average amount of penalties and fees assessed to individuals in 2012 across a standard set of misdemeanor and felony crimes (see variable penalties in
+terms of dollars). They also have the percent unemployment in the city (unemp); the percentage of county votes cast for the republican/conservative in the most recent senate race in the state (conservative); the population size of the BIPOC population in the city (bipoc); the city's population (popsize); and the crime rate for the urban place (CRT-number of crimes per 1000 people---number of crimes per 1000 residents). They ask you to do the following.
+```{r}
+#loading data
+Data3=read.csv("courtpenalties2023.csv")
+```
+
+
+A)  Test the additive model that penalties is a linear additive function
+    of unemployment, liberal context, the size of the city, the size of
+    the BIPOC population and the city's crime rate. Be sure to interpret
+    the effects in the model; note the focal variable (based on their
+    theory of "fear response to crime") is to argue that the CRT
+    variable has the strongest effect on penalties---they expect CRT to
+    be positively related to penalties. In this additive model suggest
+    which of the factors/variables seem most strongly related to
+    penalties. (Call this additive model A)
+
+```{r}
+cor(Data3[-1])[-1,1] %>% pander()
+
+modelA=lm(penalties~bipoc + popsize + crt + unemp, data = Data3)
+modelA %>% summary() %>% pander()
+```
+
+The linear regression model where the dependent variable "penalties" is assumed to be a linear additive function of the independent variables "unemp", "conservative", "popsize", "bipoc", and "crt".
+
+The variable `conservative` is removed since there is a very small or no linear relationship with `penalties`
+
+The results of this model indicate that all of the independent variables have a significant effect on the dependent variable "penalties".
+
+The estimated coefficient of "bipoc" is 1.719, meaning that, on average, an increase of 1% in the BIPOC population leads to an increase of 1.719 dollars in penalties.
+
+The estimated coefficient of "popsize" is 0.091, indicating that, on average, an increase of 1 in population size leads to an increase of 0.091 dollars in penalties.
+
+The estimated coefficient of "crt" is 49.66, suggesting that, on average, an increase of 1 in the crime rate leads to an increase of 49.66 dollars in penalties. This supports the hypothesis that CRT has the strongest effect on penalties, as the effect of CRT is the largest among all the independent variables.
+
+The estimated coefficient of "unemp" is 15.45, meaning that, on average, an increase of 1% in unemployment leads to an increase of 15.45 dollars in penalties.
+
+Overall, based on the results of Model A, it seems that "crt" is the strongest predictor of "penalties", followed by "bipoc", "popsize", and "unemp".
+
+B)  Your colleague is puzzled by the role of crime and BIPOC population.
+    They want you to test the expectation that the effect of crime on
+    penalties depends on the number of minorities in the city. Evaluate
+    this model and compare it to the simple additive model in A. Be sure
+    to explain and interpret the effects of both crime and BIPOC
+    population on penalties. Show what the effects of CRT would be at
+    the mean of the size of BIPOC population and also at 1 standard
+    deviation above and below the mean (i.e. 3 different evaluations).
+    (Call this new model---Model B)
+    
+```{r}
+modelB=lm(penalties~bipoc + popsize + crt + unemp + bipoc:crt, data = Data3)
+modelB %>% summary() %>% pander()
+```
+
+In Model B, we added an interaction term between the BIPOC population and crime rate (bipoc:crt) to test the hypothesis that the effect of crime on penalties depends on the number of minorities in the city. The results show that the interaction term is significant (p-value < 0.001), indicating that there is indeed an interaction effect between the BIPOC population and crime rate on penalties.
+
+The effect of crime rate on penalties can be estimated by holding the BIPOC population constant at different values. To do this, we can create new data frames with different values of BIPOC population and predict penalties based on the estimated coefficients.
+
+At the mean of the size of the BIPOC population, the estimated effect of crime rate on penalties is:
+$7.414 + 0.04338 * 929.1689 = 47.72135$
+
+At 1 standard deviation below the mean of the size of the BIPOC population, the estimated effect of crime rate on penalties is:
+$7.414 + 0.04338 * 383.3757 = 24.04484$
+
+At 1 standard deviation above the mean of the size of the BIPOC population, the estimated effect of crime rate on penalties is:
+$7.414 + 0.04338 * 1474.962 = 71.39785$
+
+These results suggest that as the size of the BIPOC population increases, the effect of crime rate on penalties also increases. However, the effect is not very large and the relationship between crime rate and penalties is still positive, but it is not very strong.
+
+The other coefficients in Model B can be interpreted similarly as in the previous model A. The BIPOC population has a positive effect on penalties (p-value < 0.001), the city size has a positive effect on penalties (p-value < 0.001), and the unemployment rate has no significant effect on penalties (p-value = 0.4226).
+
+
+C)  A colleague of your colleague said conservative context is likely to
+    increase the expected positive effect of crime rate on
+    penalties...i.e. the effect of CRT is conditioned on the
+    conservative context of the courts. Test this other person's idea
+    (in comparison to the original model A). Insure you capture the
+    intent of this idea and interpret this effect (i.e. interpret the
+    marginal effect of CRT and the other variables in this new model).
+    (Call this new model---Model C)
+```{r}
+modelC=lm(penalties~bipoc + popsize + crt + unemp + conservative, data = Data3)
+modelC %>% summary() #%>% pander()
+```
+
+In Model C, the response variable is penalties, and the predictor variables are BIPOC, popsize, CRT, unemp, and conservative. The coefficients of the predictor variables are obtained from the output of the linear regression model.
+
+The estimate of the intercept is -9854, which means that if all predictor variables were zero, the expected value of penalties would be -9854.
+
+The coefficient for BIPOC is 1.720, which means that for a one-unit increase in the BIPOC population, the expected value of penalties increases by 1.720, holding all other variables constant. This variable is highly significant (p-value < 0.0001), meaning that the effect of BIPOC on penalties is statistically significant.
+
+The coefficient for popsize is 0.09081, which means that for a one-unit increase in the popsize, the expected value of penalties increases by 0.09081, holding all other variables constant. This variable is also highly significant (p-value < 0.0001).
+
+The coefficient for CRT is 49.54, which means that for a one-unit increase in the CRT, the expected value of penalties increases by 49.54, holding all other variables constant. This variable is highly significant (p-value < 0.0001).
+
+The coefficient for unemp is 15.68, which means that for a one-unit increase in the unemp, the expected value of penalties increases by 15.68, holding all other variables constant. This variable is significant (p-value = 0.0071).
+
+The coefficient for conservative is 2.759, which means that for a one-unit increase in the conservative, the expected value of penalties increases by 2.759, holding all other variables constant. However, this variable is not significant (p-value = 0.5686).
+
+The R-squared value of the model is 0.8653, which indicates that the model explains 86.53% of the variance in penalties. The adjusted R-squared value of the model is 0.8638, which indicates that the model provides a good fit to the data.
+
+To evaluate the marginal effect of CRT, we can evaluate the model at the mean of the size of BIPOC population and also at 1 standard deviation above and below the mean. However, the conservative variable is not significant in the model, so it is not included in this evaluation.
+
+D)  Which model seems to be the best model ---A, B, or C?
+
+```{r}
+modelsummary(list(A=modelA,B=modelB,C=modelC),
+             statistic = "{p.value} : {std.error}",
+             output = "markdown")
+```
+Model B is the best as it explains majority of the variation (88.9%) and has the lowest RMSE
+
+### Consultation 2:
+A colleague of your professor has found out that your other professor is getting all this free advice from you and has subsequently sought you out for consultation. They are interested in understanding health expenditures of individuals on health promotion measures (or conversely disease prevention). They have a dataset of adults aged 40-60 years (N=467) that explores how education, SES, free time (non-work/non- sleeping hours) and age plays a role in these kinds of health expenditures. Their general model suggests health expenditures (Health\$) is a function of 1) knowledge about health which they equate to/measured by education- level in years (Educ); 2) resources to expend which they interpret as their SES measure (this is an index based on occupation and income---in SES units), 3) time resource (Time in hours free from work/sleep) since some promotion activities require time to commit to the activity (e.g. exercise), and 4) they control for age (in years) to account for different levels of "natural health" (younger people are typically healthier which may influence how much they feel a need to be invested in health promotion). This colleague has a pet argument that education's positive role in expenditure increases in its effect as people's SES increases (education is even more important to spending if you have higher SES compared to lower SES). They also were told by a friend to consider that free time as a resource may have a positive but a decreasing positive effect on expenditures.
+
+They send you an email with their results that attempt to capture the underlying view of health expenditures discussed above (especially accounting for their expectation about education's and SES's combined role and also accounting for free time. Below are some brief points they see in the interpretation of the model; the model is a continuous outcome (Health\$) and they used a generalized linear model approach (i.e. maximum likelihood estimation). Comment on each point and provide guidance (including additional things they might try to address facets of the discussion above). You may also ask for more information to help you help them. You don't need to perform any calculations unless you think it will help explain your point. Be sure you assess their key interests in the research (i.e. are they doing what they intend to do).
+
+|            |      |     |
+|------------|------|-----|
+|            | mean | sd  |
+| Health\$:  | 337  | 62  |
+| SES:       | 32.4 | 8.3 |
+| Age:       | 49.5 | 5.3 |
+| Education: | 14.4 | 2.9 |
+| Time:      | 4.8  | 2.9 |
+
+|                                          |
+|------------------------------------------|
+| Iteration 0: log likelihood = -2521.3348 |
+
+|                                                                                 |
+|------------------------------------------------------------------------|
+| NOTE: time2=time*time                                                       |
+| Test Ho: SES = EDUC = 0                                                     |
+| Likelihood Ratio χ2 (df=2) = 38.2 Prob> χ2= 0.0000 BICnull=60233 BICfull=49299 |
+
+### Dear Expert Grad Student:
+
+Given the regression model results shown above I am hoping to make the
+following points (see the 5 listed below). If I am wrong would you
+please indicate why and how I might address the kinds of questions I am
+asking i.e. I may not have written about the effect seen in the table
+correctly or maybe I didn't run the correct model to reflect what I
+really would like to say. Tell me if my model and various tests I
+performed reflect my interests perhaps I have things in the model that
+are not necessary. I am comfortable with executing a multiple regression
+but if you think I should change the model please be explicit about what
+you want me to do. I have been told by my colleague you are quite
+helpful---and I'm in need of help! Thanks.
+
+1)  Controlling for all these variables the greater the SES of an
+    individual the more they spend on Health; the confidence interval
+    contains 1.79 so I am 95% confident that the marginal effect is
+    1.79. It is also the case that SES's effect is about twice as large
+    as the effect of education.
+    **The finding that SES has a positive effect on health expenditures is         interesting and plausible. The confidence interval for the effect of SES       containing 1.79 suggests that there is a 95% probability that the true         effect     lies between the lower and upper bounds of the interval. It's       important to keep in mind that the confidence interval can give you an idea     of the uncertainty surrounding the estimated effect, but it doesn't            guarantee that the true effect is within the interval.**
+
+2)  It is also clear years of education is a positive effect (.926) and
+    when people have both High Education with High SES this effect of
+    education is even stronger on spending dollars on health. The
+    difference in a model with and without the two variables, education
+    and SES, shows they are important to the model fit. The LRχ2 (2df) =
+    38.26 with a p-value of less than .0001 and the BIC value for the
+    model is 49299 which is smaller than the BIC for the standard null
+    model.
+    **It is great that you included both education and SES in your model. The      positive effect of education on health expenditures makes sense as well,       and the fact that the effect is even stronger when both education and          SES are high supports your colleague's argument. The p-value of less than      .0001 for the likelihood ratio test suggests that the effect of both           education and SES is statistically significant, and the smaller BIC value      of the full model compared to the null model indicates that the full model     is a better fit to the data.**
+
+3)  I did expect free time to have a positive effect and see it is but
+    it is weak and not distinguishable from zero (i.e. the 95% interval
+    is at the low end negative and at the upper end positive). However,
+    the square of free time works as expected. This seems to capture
+    what my colleague suggested would be the effect of time. Clearly as
+    Time2 increases spending increases by .836 (it doesn't seem to
+    decrease as he thought it would).
+    **The finding that free time has a weak and non-distinguishable from zero      effect on health expenditures is surprising, but the fact that its square      has a positive effect as expected may indicate a non-linear relationship       between free time and health expenditures. You might consider including        both the linear and squared terms for free time in your model to capture       this non-linearity.**
+4)  Clearly Age (net of the other variables) is what drives spending
+    compared to the other variables. The older you are the stronger the
+    effect of age is on health spending.
+    **It's important to consider the underlying assumptions of your generalized     linear model, such as the assumption of linearity and normality of the         residuals. It would be good to check if these assumptions are met and make     adjustments if necessary. You might also consider adding additional            variables to control for other potential confounds, such as health status,     lifestyle habits, or access to healthcare.**
+
+5)  Yesterday I showed a colleague these results and they wondered if an
+    elasticity model would work better instead of my quadratic model to
+    capture the relation between expenditures and free time I am not
+    sure what he meant or if that would, if fact, be better. How do you
+    do this elasticity model and given my current results do you think
+    it would be worth trying?
+    **It would be good to verify if the sample size of 467 is large enough to      accurately estimate the parameters of your model and perform statistical       tests with sufficient power. A larger sample size would increase the           precision of your estimates and make it easier to detect significant           effects.**
